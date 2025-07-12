@@ -1,35 +1,28 @@
+<!-- templates/portfolio.html -->
 {% extends "base.html" %}
+
 {% block title %}Portfolio{% endblock %}
 
 {% block content %}
-<h2>Portföyünüz</h2>
-
-{% if portfolio %}
-<table class="table table-striped">
+<h2 class="mb-4">Portföy</h2>
+<table class="table table-bordered">
     <thead>
         <tr>
-            <th>Symbol</th>
-            <th>Quantity</th>
-            <th>Market Price</th>
-            <th>Market Value</th>
-            <th>Unrealized P/L</th>
+            <th>Hisse</th>
+            <th>Adet</th>
+            <th>Mevcut Fiyat</th>
+            <th>Toplam Değer</th>
         </tr>
     </thead>
     <tbody>
-    {% for item in portfolio %}
+        {% for stock in portfolio %}
         <tr>
-            <td>{{ item.contract.symbol }}</td>
-            <td>{{ item.position }}</td>
-            <td>{{ item.marketPrice }}</td>
-            <td>{{ item.marketValue }}</td>
-            <td>{{ item.unrealizedPNL }}</td>
+            <td>{{ stock.symbol }}</td>
+            <td>{{ stock.quantity }}</td>
+            <td>{{ stock.current_price }}</td>
+            <td>{{ stock.total_value }}</td>
         </tr>
-    {% endfor %}
+        {% endfor %}
     </tbody>
 </table>
-{% else %}
-<p>Portföy verisi bulunamadı veya IBKR bağlantısı sağlanamadı.</p>
-{% endif %}
-
 {% endblock %}
-
