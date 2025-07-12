@@ -1,20 +1,13 @@
 {% extends "layout.html" %}
-{% block title %}Subscribe | Esen Global Invest{% endblock %}
+{% block title %}Subscribe{% endblock %}
+
 {% block content %}
-<h2>Subscribe to Premium Access</h2>
-<div class="card">
-    <div class="card-body">
-        <h5 class="card-title">Premium Plan</h5>
-        <p>$29/month - Full access to live portfolio, performance data, and copy trading system.</p>
-        <form action="/subscribe" method="POST">
-            <script src="https://checkout.stripe.com/checkout.js" class="stripe-button"
-                    data-key="{{ stripe_public_key }}"
-                    data-amount="2900"
-                    data-name="Esen Global Invest"
-                    data-description="Premium Monthly Subscription"
-                    data-currency="usd">
-            </script>
-        </form>
-    </div>
+<div class="container mt-5">
+  <h1 class="mb-4">Abonelik Satın Al</h1>
+  <p class="lead">Profesyonel yatırım portföyümüze abone olun ve kazançlı işlemlerden ilk siz haberdar olun.</p>
+  
+  <a href="https://esenglobal.gumroad.com/l/aqcbgqx" class="btn btn-primary btn-lg mt-4" target="_blank">
+    Şimdi Abone Ol →
+  </a>
 </div>
 {% endblock %}
