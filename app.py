@@ -44,6 +44,22 @@ def portfolio():
         return redirect(url_for('subscribe'))
     return render_template('portfolio.html')
 
+@app.route('/performance')
+@login_required
+def performance():
+    if not current_user.is_subscribed:
+        flash("Bu sayfa sadece abonelere açıktır.", "warning")
+        return redirect(url_for('subscribe'))
+    return render_template('performance.html')
+
+@app.route('/copy_trade')
+@login_required
+def copy_trade():
+    if not current_user.is_subscribed:
+        flash("Bu sayfa sadece abonelere açıktır.", "warning")
+        return redirect(url_for('subscribe'))
+    return render_template('copy_trade.html')
+
 @app.route('/subscribe')
 def subscribe():
     return render_template('subscribe.html')
@@ -97,3 +113,4 @@ if __name__ == '__main__':
     with app.app_context():
         db.create_all()
     app.run(debug=True)
+
