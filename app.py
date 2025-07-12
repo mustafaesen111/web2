@@ -1,10 +1,11 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
+from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user, UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 from dotenv import load_dotenv
 import os
 
+# IBKR için ib_insync kütüphanesi
 from ib_insync import IB
 
 # Load environment variables
@@ -21,45 +22,34 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 
-# Models
+# User modeli
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(150), unique=True, nullable=False)
     password = db.Column(db.String(256), nullable=False)
     is_subscribed = db.Column(db.Boolean, default=False)
 
-# Login manager loader
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
 
-
-# --- IBKR Bağlantısı ve Veri Çekme Fonksiyonları ---
-def fetch_ibkr_portfolio():
+# IBKR'den portföy verisi çekmek için fonksiyon
+def get_ibkr_portfolio():
     ib = IB()
-    try:
-        ib.connect('127.0.0.1', 7497, clientId=1)  # IB Gateway ya da TWS ayarlarına göre port ve clientId değişebilir
-        portfolio = ib.portfolio()
-        ib.disconnect()
-        return portfolio
-    except Exception as e:
-        print(f"IBKR bağlantı hatası: {e}")
-        return []
+    ib.connect('127.0.0.1', 4002, clientId=1)  # IB Gateway default portu 4002
+    portfolio = ib.portfolio()
+    ib.disconnect()
+    return portfolio
 
-def fetch_ibkr_trades():
+# IBKR'den trade geçmişi için (açık işlemler)
+def get_ibkr_trades():
     ib = IB()
-    try:
-        ib.connect('127.0.0.1', 7497, clientId=1)
-        trades = ib.trades()
-        ib.disconnect()
-        return trades
-    except Exception as e:
-        print(f"IBKR bağlantı hatası: {e}")
-        return []
-
+    ib.connect('127.0.0.1', 4002, clientId=1)
+    trades = ib.trades()
+    ib.disconnect()
+    return trades
 
 # Routes
-
 @app.route('/')
 def home():
     return render_template('home.html')
@@ -70,10 +60,7 @@ def portfolio():
     if not current_user.is_subscribed:
         flash("Bu sayfa sadece aboneler içindir.", "warning")
         return redirect(url_for('subscribe'))
-
-    portfolio_data = fetch_ibkr_portfolio()
-    # portfolio_data genelde ib_insync'in PortfolioItem objeleri listesi
-    # Template'e uygun şekilde verilecek
+    portfolio_data = get_ibkr_portfolio()
     return render_template('portfolio.html', portfolio=portfolio_data)
 
 @app.route('/trades')
@@ -82,26 +69,8 @@ def trades():
     if not current_user.is_subscribed:
         flash("Bu sayfa sadece aboneler içindir.", "warning")
         return redirect(url_for('subscribe'))
-
-    trades_data = fetch_ibkr_trades()
-    # trades_data genelde ib_insync'in Trade objeleri listesi
-    return render_template('trades.html', trades=trades_data)
-
-@app.route('/performance')
-@login_required
-def performance():
-    if not current_user.is_subscribed:
-        flash("Bu sayfa sadece aboneler içindir.", "warning")
-        return redirect(url_for('subscribe'))
-    return render_template('performance.html')
-
-@app.route('/copy_trade')
-@login_required
-def copy_trade():
-    if not current_user.is_subscribed:
-        flash("Bu sayfa sadece aboneler içindir.", "warning")
-        return redirect(url_for('subscribe'))
-    return render_template('copy_trade.html')
+    trades_data = get_ibkr_trades()
+    return render_template('history.html', trades=trades_data)
 
 @app.route('/subscribe')
 def subscribe():
@@ -140,6 +109,7 @@ def logout():
     logout_user()
     return redirect(url_for('home'))
 
+# Gumroad webhook - abone yapma
 @app.route('/gumroad-webhook', methods=['POST'])
 def gumroad_webhook():
     payload = request.form
@@ -151,7 +121,6 @@ def gumroad_webhook():
             db.session.commit()
     return '', 200
 
-# Run locally
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
