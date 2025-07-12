@@ -1,78 +1,61 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, redirect, url_for, flash, session
+from models import db, User
+from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///db.sqlite3'  # İstersen başka veritabanı kullanabilirsin
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SECRET_KEY'] = 'supersecretkey'  # Bunu güçlü ve gizli yapmayı unutma!
 
-# Örnek veri (gerçek veritabanı bağlanacak)
-portfolio = [
-    {"symbol": "AAPL", "name": "Apple Inc.", "quantity": 50, "avg_price": 150, "current_price": 160, "pl": 500},
-    {"symbol": "TSLA", "name": "Tesla Inc.", "quantity": 10, "avg_price": 700, "current_price": 720, "pl": 200},
-]
+db.init_app(app)
 
-ranked_stocks = [
-    {"symbol": "TSLA", "name": "Tesla Inc.", "return_percent": 20},
-    {"symbol": "AAPL", "name": "Apple Inc.", "return_percent": 10},
-]
-
-trades = [
-    {"date": "2025-07-01", "symbol": "AAPL", "action": "Buy", "quantity": 50, "price": 150},
-    {"date": "2025-07-05", "symbol": "TSLA", "action": "Buy", "quantity": 10, "price": 700},
-]
+with app.app_context():
+    db.create_all()
 
 @app.route('/')
 def home():
     return render_template('home.html')
 
-@app.route('/portfolio')
-def portfolio_page():
-    return render_template('portfolio.html', portfolio=portfolio)
-
-@app.route('/stocks-ranks')
-def stocks_ranks():
-    return render_template('ranks.html', ranked_stocks=ranked_stocks)
-
-@app.route('/trade-history')
-def trade_history():
-    return render_template('history.html', trades=trades)
-
-@app.route('/performance')
-def performance():
-    # Grafik için örnek data
-    chart_labels = ["Jan", "Feb", "Mar", "Apr", "May"]
-    chart_data = [5, 10, 8, 12, 15]
-    return render_template('performance.html', chart_labels=chart_labels, chart_data=chart_data)
-
-@app.route('/copy-trade', methods=['GET', 'POST'])
-def copy_trade():
-    user = {"copy_enabled": False}  # Örnek kullanıcı verisi
+@app.route('/register', methods=['GET', 'POST'])
+def register():
     if request.method == 'POST':
-        enabled = 'enable_copy' in request.form
-        user["copy_enabled"] = enabled
-        # Veritabanı update işlemi yapılacak
-    return render_template('copy_trade.html', user=user)
-
-@app.route('/how-it-works')
-def how_it_works():
-    return render_template('how_it_works.html')
-
-@app.route('/search')
-def search():
-    q = request.args.get('q', '').lower()
-    results = []
-    if q:
-        # Basit arama simülasyonu
-        all_stocks = portfolio  # Gerçek veritabanı sorgusu yapılacak
-        results = [s for s in all_stocks if q in s['symbol'].lower() or q in s['name'].lower()]
-    return render_template('search.html', results=results)
-
-@app.route('/subscribe', methods=['GET', 'POST'])
-def subscribe():
-    stripe_public_key = "pk_test_..."  # Buraya gerçek Stripe/Gumroad public key gelecek
-    return render_template('subscribe.html', stripe_public_key=stripe_public_key)
+        email = request.form['email'].lower()
+        password = request.form['password']
+        if User.query.filter_by(email=email).first():
+            flash('Email zaten kayıtlı.', 'danger')
+            return redirect(url_for('register'))
+        
+        new_user = User(email=email)
+        new_user.set_password(password)
+        db.session.add(new_user)
+        db.session.commit()
+        flash('Kayıt başarılı! Lütfen giriş yapın.', 'success')
+        return redirect(url_for('login'))
+    return render_template('register.html')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    # Giriş işlemleri yapılacak
+    if request.method == 'POST':
+        email = request.form['email'].lower()
+        password = request.form['password']
+        user = User.query.filter_by(email=email).first()
+        if user and user.check_password(password):
+            session['user_id'] = user.id
+            flash('Giriş başarılı!', 'success')
+            return redirect(url_for('home'))
+        else:
+            flash('Geçersiz email veya şifre.', 'danger')
+            return redirect(url_for('login'))
     return render_template('login.html')
+
+@app.route('/logout')
+def logout():
+    session.pop('user_id', None)
+    flash('Çıkış yapıldı.', 'success')
+    return redirect(url_for('home'))
+
+# Diğer sayfa route'larını buraya ekleyebilirsin
 
 if __name__ == '__main__':
     app.run(debug=True)
+
