@@ -1,28 +1,28 @@
 <!-- templates/portfolio.html -->
 {% extends "base.html" %}
-
 {% block title %}Portfolio{% endblock %}
 
 {% block content %}
-<h2 class="mb-4">Portföy</h2>
-<table class="table table-bordered">
+<h2>Portföy</h2>
+<table class="table table-striped">
     <thead>
         <tr>
             <th>Hisse</th>
-            <th>Adet</th>
-            <th>Mevcut Fiyat</th>
+            <th>Miktar</th>
+            <th>Fiyat</th>
             <th>Toplam Değer</th>
         </tr>
     </thead>
     <tbody>
-        {% for stock in portfolio %}
+        {% for item in portfolio %}
         <tr>
-            <td>{{ stock.symbol }}</td>
-            <td>{{ stock.quantity }}</td>
-            <td>{{ stock.current_price }}</td>
-            <td>{{ stock.total_value }}</td>
+            <td>{{ item.symbol }}</td>
+            <td>{{ item.quantity }}</td>
+            <td>{{ item.price }}</td>
+            <td>{{ item.value }}</td>
         </tr>
         {% endfor %}
     </tbody>
 </table>
 {% endblock %}
+
