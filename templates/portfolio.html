@@ -1,29 +1,35 @@
-{% extends "layout.html" %}
-{% block title %}Portfolio | Esen Global Invest{% endblock %}
+{% extends "base.html" %}
+{% block title %}Portfolio{% endblock %}
+
 {% block content %}
-<h2>Live Portfolio</h2>
+<h2>Portföyünüz</h2>
+
+{% if portfolio %}
 <table class="table table-striped">
     <thead>
         <tr>
             <th>Symbol</th>
-            <th>Company</th>
             <th>Quantity</th>
-            <th>Avg. Price</th>
-            <th>Current Price</th>
-            <th>P/L</th>
+            <th>Market Price</th>
+            <th>Market Value</th>
+            <th>Unrealized P/L</th>
         </tr>
     </thead>
     <tbody>
-        {% for stock in portfolio %}
+    {% for item in portfolio %}
         <tr>
-            <td>{{ stock.symbol }}</td>
-            <td>{{ stock.name }}</td>
-            <td>{{ stock.quantity }}</td>
-            <td>${{ stock.avg_price }}</td>
-            <td>${{ stock.current_price }}</td>
-            <td class="{{ 'text-success' if stock.pl >= 0 else 'text-danger' }}">${{ stock.pl }}</td>
+            <td>{{ item.contract.symbol }}</td>
+            <td>{{ item.position }}</td>
+            <td>{{ item.marketPrice }}</td>
+            <td>{{ item.marketValue }}</td>
+            <td>{{ item.unrealizedPNL }}</td>
         </tr>
-        {% endfor %}
+    {% endfor %}
     </tbody>
 </table>
+{% else %}
+<p>Portföy verisi bulunamadı veya IBKR bağlantısı sağlanamadı.</p>
+{% endif %}
+
 {% endblock %}
+
