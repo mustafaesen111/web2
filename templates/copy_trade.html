@@ -1,0 +1,13 @@
+{% extends "layout.html" %}
+{% block title %}Copy Trade | Esen Global Invest{% endblock %}
+{% block content %}
+<h2>Copy Trading Setup</h2>
+<p>When enabled, your account will automatically copy all trades from the master portfolio.</p>
+<form method="post">
+    <div class="form-check">
+        <input class="form-check-input" type="checkbox" name="enable_copy" id="enable_copy" {% if user.copy_enabled %}checked{% endif %}>
+        <label class="form-check-label" for="enable_copy">Enable Copy Trading</label>
+    </div>
+    <button type="submit" class="btn btn-success mt-3">Save Preferences</button>
+</form>
+{% endblock %}
