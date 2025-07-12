@@ -1,0 +1,25 @@
+{% extends "layout.html" %}
+{% block title %}Ranks | Esen Global Invest{% endblock %}
+{% block content %}
+<h2>Top Performing Stocks</h2>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Rank</th>
+            <th>Symbol</th>
+            <th>Company</th>
+            <th>Return (%)</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for stock in ranked_stocks %}
+        <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{ stock.symbol }}</td>
+            <td>{{ stock.name }}</td>
+            <td class="{{ 'text-success' if stock.return_percent >= 0 else 'text-danger' }}">{{ stock.return_percent }}%</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
