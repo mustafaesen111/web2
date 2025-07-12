@@ -5,6 +5,8 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from dotenv import load_dotenv
 import os
 
+from ib_insync import IB
+
 # Load environment variables
 load_dotenv()
 
@@ -31,7 +33,33 @@ class User(UserMixin, db.Model):
 def load_user(user_id):
     return User.query.get(int(user_id))
 
+
+# --- IBKR Bağlantısı ve Veri Çekme Fonksiyonları ---
+def fetch_ibkr_portfolio():
+    ib = IB()
+    try:
+        ib.connect('127.0.0.1', 7497, clientId=1)  # IB Gateway ya da TWS ayarlarına göre port ve clientId değişebilir
+        portfolio = ib.portfolio()
+        ib.disconnect()
+        return portfolio
+    except Exception as e:
+        print(f"IBKR bağlantı hatası: {e}")
+        return []
+
+def fetch_ibkr_trades():
+    ib = IB()
+    try:
+        ib.connect('127.0.0.1', 7497, clientId=1)
+        trades = ib.trades()
+        ib.disconnect()
+        return trades
+    except Exception as e:
+        print(f"IBKR bağlantı hatası: {e}")
+        return []
+
+
 # Routes
+
 @app.route('/')
 def home():
     return render_template('home.html')
@@ -42,13 +70,28 @@ def portfolio():
     if not current_user.is_subscribed:
         flash("Bu sayfa sadece aboneler içindir.", "warning")
         return redirect(url_for('subscribe'))
-    return render_template('portfolio.html')
+
+    portfolio_data = fetch_ibkr_portfolio()
+    # portfolio_data genelde ib_insync'in PortfolioItem objeleri listesi
+    # Template'e uygun şekilde verilecek
+    return render_template('portfolio.html', portfolio=portfolio_data)
+
+@app.route('/trades')
+@login_required
+def trades():
+    if not current_user.is_subscribed:
+        flash("Bu sayfa sadece aboneler içindir.", "warning")
+        return redirect(url_for('subscribe'))
+
+    trades_data = fetch_ibkr_trades()
+    # trades_data genelde ib_insync'in Trade objeleri listesi
+    return render_template('trades.html', trades=trades_data)
 
 @app.route('/performance')
 @login_required
 def performance():
     if not current_user.is_subscribed:
-        flash("Bu sayfa sadece abonelere açıktır.", "warning")
+        flash("Bu sayfa sadece aboneler içindir.", "warning")
         return redirect(url_for('subscribe'))
     return render_template('performance.html')
 
@@ -56,7 +99,7 @@ def performance():
 @login_required
 def copy_trade():
     if not current_user.is_subscribed:
-        flash("Bu sayfa sadece abonelere açıktır.", "warning")
+        flash("Bu sayfa sadece aboneler içindir.", "warning")
         return redirect(url_for('subscribe'))
     return render_template('copy_trade.html')
 
@@ -113,4 +156,5 @@ if __name__ == '__main__':
     with app.app_context():
         db.create_all()
     app.run(debug=True)
+
 
