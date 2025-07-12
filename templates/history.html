@@ -1,35 +1,32 @@
+<!-- templates/history.html -->
 {% extends "base.html" %}
-{% block title %}Geçmiş İşlemler{% endblock %}
+
+{% block title %}Trade Geçmişi{% endblock %}
 
 {% block content %}
-<h2>Geçmiş İşlemleriniz</h2>
-
-{% if trades %}
+<h2 class="mb-4">Geçmiş İşlemler</h2>
 <table class="table table-striped">
     <thead>
         <tr>
-            <th>Symbol</th>
-            <th>Action</th>
-            <th>Quantity</th>
-            <th>Price</th>
-            <th>Status</th>
+            <th>Tarih</th>
+            <th>İşlem Türü</th>
+            <th>Hisse</th>
+            <th>Adet</th>
+            <th>Fiyat</th>
         </tr>
     </thead>
     <tbody>
-    {% for trade in trades %}
+        {% for trade in trades %}
         <tr>
-            <td>{{ trade.contract.symbol }}</td>
-            <td>{{ trade.action }}</td>
-            <td>{{ trade.filled }}</td>
-            <td>{{ trade.avgFillPrice }}</td>
-            <td>{{ trade.status }}</td>
+            <td>{{ trade.date }}</td>
+            <td>{{ trade.type }}</td>
+            <td>{{ trade.symbol }}</td>
+            <td>{{ trade.quantity }}</td>
+            <td>{{ trade.price }}</td>
         </tr>
-    {% endfor %}
+        {% endfor %}
     </tbody>
 </table>
-{% else %}
-<p>İşlem verisi bulunamadı veya IBKR bağlantısı sağlanamadı.</p>
-{% endif %}
-
 {% endblock %}
+
 
