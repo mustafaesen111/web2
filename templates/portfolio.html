@@ -1,0 +1,29 @@
+{% extends "layout.html" %}
+{% block title %}Portfolio | Esen Global Invest{% endblock %}
+{% block content %}
+<h2>Live Portfolio</h2>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Symbol</th>
+            <th>Company</th>
+            <th>Quantity</th>
+            <th>Avg. Price</th>
+            <th>Current Price</th>
+            <th>P/L</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for stock in portfolio %}
+        <tr>
+            <td>{{ stock.symbol }}</td>
+            <td>{{ stock.name }}</td>
+            <td>{{ stock.quantity }}</td>
+            <td>${{ stock.avg_price }}</td>
+            <td>${{ stock.current_price }}</td>
+            <td class="{{ 'text-success' if stock.pl >= 0 else 'text-danger' }}">${{ stock.pl }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
