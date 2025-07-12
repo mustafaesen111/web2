@@ -1,0 +1,36 @@
+{% extends "layout.html" %}
+{% block title %}Search Stocks | Esen Global Invest{% endblock %}
+{% block content %}
+<h2>Search Stocks</h2>
+<form method="GET" action="/search">
+    <div class="input-group mb-3">
+        <input type="text" name="q" class="form-control" placeholder="Enter stock symbol or company name" value="{{ request.args.get('q', '') }}">
+        <button class="btn btn-primary" type="submit">Search</button>
+    </div>
+</form>
+
+{% if results %}
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Symbol</th>
+            <th>Company</th>
+            <th>Current Price</th>
+            <th>Details</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for stock in results %}
+        <tr>
+            <td>{{ stock.symbol }}</td>
+            <td>{{ stock.name }}</td>
+            <td>${{ stock.current_price }}</td>
+            <td><a href="/portfolio/{{ stock.symbol }}" class="btn btn-sm btn-info">View</a></td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% elif request.args.get('q') %}
+<p>No results found for "{{ request.args.get('q') }}".</p>
+{% endif %}
+{% endblock %}
