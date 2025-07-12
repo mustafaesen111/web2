@@ -1,35 +1,36 @@
 {% extends "layout.html" %}
-{% block title %}Signup | Esen Global Invest{% endblock %}
-
+{% block title %}Sign Up | Esen Global Invest{% endblock %}
 {% block content %}
 <div class="row justify-content-center">
-    <div class="col-md-6">
-        <h2 class="text-center mb-4">Create an Account</h2>
-
-        {% with messages = get_flashed_messages(with_categories=true) %}
-          {% if messages %}
-            {% for category, message in messages %}
-              <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-              </div>
-            {% endfor %}
-          {% endif %}
-        {% endwith %}
-
-        <form method="POST" action="{{ url_for('signup') }}">
-            <div class="mb-3">
-                <label for="email" class="form-label">Email address</label>
-                <input type="email" class="form-control" name="email" required placeholder="you@example.com">
-            </div>
-            <div class="mb-3">
-                <label for="password" class="form-label">Create Password</label>
-                <input type="password" class="form-control" name="password" required placeholder="••••••••">
-            </div>
-            <button type="submit" class="btn btn-primary w-100">Sign Up</button>
-        </form>
-
-        <p class="mt-3 text-center">Already have an account? <a href="{{ url_for('login') }}">Login here</a>.</p>
-    </div>
+  <div class="col-md-6">
+    <h2 class="mb-4">Create Your Account</h2>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+    <form method="post" action="{{ url_for('signup') }}">
+      <div class="mb-3">
+        <label for="email" class="form-label">Email address</label>
+        <input type="email" class="form-control" id="email" name="email" placeholder="Enter email" required>
+      </div>
+      <div class="mb-3">
+        <label for="password" class="form-label">Password</label>
+        <input type="password" class="form-control" id="password" name="password" placeholder="Enter password" required>
+      </div>
+      <div class="mb-3">
+        <label for="confirm_password" class="form-label">Confirm Password</label>
+        <input type="password" class="form-control" id="confirm_password" name="confirm_password" placeholder="Confirm password" required>
+      </div>
+      <button type="submit" class="btn btn-primary">Sign Up</button>
+      <p class="mt-3">Already have an account? <a href="{{ url_for('login') }}">Login here</a>.</p>
+    </form>
+  </div>
 </div>
 {% endblock %}
+
