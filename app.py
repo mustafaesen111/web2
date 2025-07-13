@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
+from flask import Flask, render_template, request, redirect, url_for, flash, session
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user, UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -27,7 +27,7 @@ class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(150), unique=True, nullable=False)
     password = db.Column(db.String(256), nullable=False)
-    is_subscribed = db.Column(db.Boolean, default=False)
+    is_subscribed = db.Column(db.Boolean, default=False)  # Bu alanı kullanmayacağız ama kalabilir
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -53,7 +53,7 @@ def get_ibkr_trades():
 def home():
     return render_template('home.html')
 
-# Abonelik Sayfası
+# Abonelik Sayfası (isteğe bağlı, kalabilir)
 @app.route('/subscribe')
 def subscribe():
     return render_template('subscribe.html')
@@ -94,7 +94,7 @@ def logout():
     logout_user()
     return redirect(url_for('home'))
 
-# Gumroad Webhook
+# Gumroad Webhook (abonelik durumu güncelleme, kalabilir)
 @app.route('/gumroad-webhook', methods=['POST'])
 def gumroad_webhook():
     payload = request.form
@@ -106,47 +106,41 @@ def gumroad_webhook():
             db.session.commit()
     return '', 200
 
-# Portföy Sayfası
+# Portföy Sayfası - artık abonelik kontrolü YOK
 @app.route('/portfolio')
 @login_required
 def portfolio():
-    if not current_user.is_subscribed:
-        flash("Bu sayfa sadece aboneler içindir.", "warning")
-        return redirect(url_for('subscribe'))
     portfolio_data = get_ibkr_portfolio()
     return render_template('portfolio.html', portfolio=portfolio_data)
 
-# Geçmiş İşlemler
+# Geçmiş İşlemler - abonelik kontrolü YOK
 @app.route('/trades')
 @login_required
 def trades():
-    if not current_user.is_subscribed:
-        flash("Bu sayfa sadece aboneler içindir.", "warning")
-        return redirect(url_for('subscribe'))
     trades_data = get_ibkr_trades()
     return render_template('history.html', trades=trades_data)
 
-# Performans Sayfası
+# Performans Sayfası - abonelik kontrolü YOK
 @app.route('/performance')
 @login_required
 def performance():
-    if not current_user.is_subscribed:
-        flash("Bu sayfa sadece aboneler içindir.", "warning")
-        return redirect(url_for('subscribe'))
     return render_template('performance.html')
 
-# Copy Trade Sayfası
+# Copy Trade Sayfası - abonelik kontrolü YOK
 @app.route('/copy-trade')
 @login_required
 def copy_trade():
-    if not current_user.is_subscribed:
-        flash("Bu sayfa sadece aboneler içindir.", "warning")
-        return redirect(url_for('subscribe'))
     return render_template('copy_trade.html')
+
+# Hata yakalama (basit)
+@app.errorhandler(500)
+def internal_error(error):
+    return f"Sunucu hatası: {error}", 500
 
 # Uygulamayı başlat
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
     app.run(debug=True)
+
 
