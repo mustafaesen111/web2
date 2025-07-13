@@ -120,6 +120,11 @@ def performance():
 def copy_trade():
     return render_template('copy_trade.html')
 
+@app.route('/init-db')
+def init_db():
+    db.create_all()
+    return "Veritabanı başarıyla oluşturuldu!"
+
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
