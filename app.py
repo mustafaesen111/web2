@@ -1,151 +1,95 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
+from flask import Flask, render_template, request, redirect, url_for, session, flash
 from flask_sqlalchemy import SQLAlchemy
-from flask_login import LoginManager, login_user, logout_user, login_required, current_user, UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
-from dotenv import load_dotenv
-import os
-
-# IBKR API için
-from ib_insync import IB
-
-# .env dosyasını yükle
-load_dotenv()
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = os.getenv("SECRET_KEY", "mysecret")
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv("DATABASE_URL", "sqlite:///db.sqlite3")
+app.config['SECRET_KEY'] = 'gizli_anahtarınız'  # Güçlü bir secret key koy
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///site.db'  # sqlite örnek
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# DB & Login yapılandırması
 db = SQLAlchemy(app)
-login_manager = LoginManager()
-login_manager.init_app(app)
-login_manager.login_view = 'login'
 
-# Kullanıcı Modeli
-class User(UserMixin, db.Model):
+# Kullanıcı modeli
+class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    email = db.Column(db.String(150), unique=True, nullable=False)
-    password = db.Column(db.String(256), nullable=False)
-    is_subscribed = db.Column(db.Boolean, default=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    password = db.Column(db.String(200), nullable=False)
+    # is_subscribed kaldırıldı veya kullanılmayacak şekilde pasif bırakıldı
 
-@login_manager.user_loader
-def load_user(user_id):
-    return User.query.get(int(user_id))
-
-# IBKR veri çekme
-def get_ibkr_portfolio():
-    ib = IB()
-    ib.connect('127.0.0.1', 4002, clientId=1)
-    portfolio = ib.portfolio()
-    ib.disconnect()
-    return portfolio
-
-def get_ibkr_trades():
-    ib = IB()
-    ib.connect('127.0.0.1', 4002, clientId=1)
-    trades = ib.trades()
-    ib.disconnect()
-    return trades
-
-# Ana Sayfa
+# Ana sayfa - giriş yapılmışsa gösterilecek sayfa
 @app.route('/')
-def home():
-    return render_template('home.html')
+def index():
+    if 'user_id' in session:
+        user = User.query.get(session['user_id'])
+        return f"Merhaba, {user.email}! <a href='/logout'>Çıkış Yap</a>"
+    return "Hoşgeldiniz! <a href='/login'>Giriş Yap</a> veya <a href='/signup'>Kayıt Ol</a>"
 
-# Abonelik Sayfası
-@app.route('/subscribe')
-def subscribe():
-    return render_template('subscribe.html')
-
-# Giriş Yap
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    if request.method == 'POST':
-        email = request.form['email']
-        password = request.form['password']
-        user = User.query.filter_by(email=email).first()
-        if user and check_password_hash(user.password, password):
-            login_user(user)
-            return redirect(url_for('home'))
-        flash("Hatalı giriş bilgileri", "danger")
-    return render_template('login.html')
-
-# Kayıt Ol
+# Signup
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
     if request.method == 'POST':
-        email = request.form['email']
-        password = generate_password_hash(request.form['password'])
+        email = request.form['email'].strip().lower()
+        password = request.form['password']
+
         if User.query.filter_by(email=email).first():
-            flash("Bu email zaten kayıtlı", "warning")
+            flash("Bu email zaten kayıtlı.", "danger")
             return redirect(url_for('signup'))
-        new_user = User(email=email, password=password)
+
+        hashed_pw = generate_password_hash(password)
+        new_user = User(email=email, password=hashed_pw)
         db.session.add(new_user)
         db.session.commit()
-        flash("Başarıyla kayıt olundu. Giriş yapabilirsiniz.", "success")
+        flash("Kayıt başarılı. Lütfen giriş yapın.", "success")
         return redirect(url_for('login'))
-    return render_template('signup.html')
 
-# Çıkış
-@app.route('/logout')
-@login_required
-def logout():
-    logout_user()
-    return redirect(url_for('home'))
+    return '''
+    <h2>Kayıt Ol</h2>
+    <form method="POST">
+        Email: <input type="email" name="email" required><br>
+        Şifre: <input type="password" name="password" required><br>
+        <button type="submit">Kayıt Ol</button>
+    </form>
+    '''
 
-# Gumroad Webhook
-@app.route('/gumroad-webhook', methods=['POST'])
-def gumroad_webhook():
-    payload = request.form
-    email = payload.get('email')
-    if email:
+# Login
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        email = request.form['email'].strip().lower()
+        password = request.form['password']
+
         user = User.query.filter_by(email=email).first()
-        if user:
-            user.is_subscribed = True
-            db.session.commit()
-    return '', 200
+        if user and check_password_hash(user.password, password):
+            session['user_id'] = user.id
+            flash("Giriş başarılı!", "success")
+            return redirect(url_for('index'))
+        else:
+            flash("Email veya şifre hatalı.", "danger")
+            return redirect(url_for('login'))
 
-# Portföy Sayfası
-@app.route('/portfolio')
-@login_required
-def portfolio():
-    if not current_user.is_subscribed:
-        flash("Bu sayfa sadece aboneler içindir.", "warning")
-        return redirect(url_for('subscribe'))
-    portfolio_data = get_ibkr_portfolio()
-    return render_template('portfolio.html', portfolio=portfolio_data)
+    return '''
+    <h2>Giriş Yap</h2>
+    <form method="POST">
+        Email: <input type="email" name="email" required><br>
+        Şifre: <input type="password" name="password" required><br>
+        <button type="submit">Giriş Yap</button>
+    </form>
+    '''
 
-# Geçmiş İşlemler
-@app.route('/trades')
-@login_required
-def trades():
-    if not current_user.is_subscribed:
-        flash("Bu sayfa sadece aboneler içindir.", "warning")
-        return redirect(url_for('subscribe'))
-    trades_data = get_ibkr_trades()
-    return render_template('history.html', trades=trades_data)
+# Logout
+@app.route('/logout')
+def logout():
+    session.pop('user_id', None)
+    flash("Çıkış yapıldı.", "info")
+    return redirect(url_for('index'))
 
-# Performans Sayfası
-@app.route('/performance')
-@login_required
-def performance():
-    if not current_user.is_subscribed:
-        flash("Bu sayfa sadece aboneler içindir.", "warning")
-        return redirect(url_for('subscribe'))
-    return render_template('performance.html')
+# Hata yakalama (basit)
+@app.errorhandler(500)
+def internal_error(error):
+    return f"Sunucu hatası: {error}", 500
 
-# Copy Trade Sayfası
-@app.route('/copy-trade')
-@login_required
-def copy_trade():
-    if not current_user.is_subscribed:
-        flash("Bu sayfa sadece aboneler içindir.", "warning")
-        return redirect(url_for('subscribe'))
-    return render_template('copy_trade.html')
-
-# Uygulamayı başlat
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
     app.run(debug=True)
+
