@@ -16,6 +16,7 @@ app.config['SECRET_KEY'] = os.getenv("SECRET_KEY", "mysecret")
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv("DATABASE_URL", "sqlite:///db.sqlite3")
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
+# DB ve Login yapılandırması
 db = SQLAlchemy(app)
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -32,19 +33,40 @@ class User(UserMixin, db.Model):
 def load_user(user_id):
     return User.query.get(int(user_id))
 
-# IBKR veri çekme
+# IBKR'den canlı portföy verisi çekme
+ibkr_host = os.getenv("IBKR_HOST", "127.0.0.1")
+ibkr_port = int(os.getenv("IBKR_PORT", 4002))
+ibkr_client_id = int(os.getenv("IBKR_CLIENT_ID", 1))
 
 def get_ibkr_portfolio():
-    return [
-        {'symbol': 'AAPL', 'quantity': 10, 'price': 190.00, 'value': 1900.00},
-        {'symbol': 'MSFT', 'quantity': 5, 'price': 320.00, 'value': 1600.00},
-    ]
+    ib = IB()
+    ib.connect(ibkr_host, ibkr_port, clientId=ibkr_client_id)
+    portfolio = ib.portfolio()
+    ib.disconnect()
+    result = []
+    for item in portfolio:
+        result.append({
+            'symbol': item.contract.symbol,
+            'quantity': item.position,
+            'price': item.marketPrice,
+            'value': item.marketValue
+        })
+    return result
 
 def get_ibkr_trades():
-    return [
-        {'symbol': 'AAPL', 'quantity': 10, 'price': 185.00, 'action': 'BUY'},
-        {'symbol': 'MSFT', 'quantity': 5, 'price': 310.00, 'action': 'BUY'},
-    ]
+    ib = IB()
+    ib.connect(ibkr_host, ibkr_port, clientId=ibkr_client_id)
+    trades = ib.trades()
+    ib.disconnect()
+    result = []
+    for trade in trades:
+        result.append({
+            'symbol': trade.contract.symbol,
+            'quantity': trade.filled,
+            'price': trade.avgFillPrice,
+            'action': trade.order.action
+        })
+    return result
 
 @app.route('/')
 def home():
